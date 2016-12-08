@@ -1,0 +1,40 @@
+{
+  "name": "kono",
+  "license": "MIT",
+  "author": "Tintin Ho (holoktin97@gmail.com)",
+  "version": "0.1.0",
+  "dependencies": {
+    "chai": "^3.5.0",
+    "craftyjs": "^0.7.1",
+    "underscore": "^1.8.3"
+  },
+  "scripts": {
+    "dev": "watchify -t babelify index.js -o www/bundle.js",
+    "build": "npm test && browserify index.js -t babelify --outfile www/bundle.js",
+    "test": "jshint src *.js && mocha --reporter min"
+  },
+  "devDependencies": {
+    "babel-preset-es2015": "^6.18.0",
+    "babelify": "^7.3.0",
+    "browserify": "^13.1.1",
+    "mocha": "^3.2.0",
+    "watchify": "^3.7.0"
+  },
+  "main": "index.js",
+  "description": "Mobile game",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xtpor/kono.git"
+  },
+  "keywords": [
+    "kono",
+    "android"
+  ],
+  "bugs": {
+    "url": "https://github.com/xtpor/kono/issues"
+  },
+  "homepage": "https://github.com/xtpor/kono#readme"
+}
