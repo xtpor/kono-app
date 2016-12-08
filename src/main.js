@@ -17,7 +17,7 @@ var config = {
     enemyName: 'Player 1',
 
     // designed resolution
-    width: 1024,
+    width: 512,
     height: 768,
 };
 
@@ -179,7 +179,7 @@ Crafty.scene('gameover', function () {
 
 module.exports = function () {
     Crafty.load(res, function () {
-        Crafty.init(config.width, config.height, 'stage');
+        Crafty.init(2024, 2000, 'stage');
         Crafty.scene('pickFirst');
     });
 };
