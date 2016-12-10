@@ -57,4 +57,16 @@ describe('Kono', function () {
         expect(game.listActions()).to.be.eql([]);
         expect(game.result).to.be.equal('blue');
     });
+
+    it('clone method should produce two distinct instances', function () {
+        let original = Kono();
+        let cloned = original.clone();
+
+        original.act({from: {x: 0, y: 0}, to: {x: 0, y: 2}});
+        expect(original.at({x: 0, y: 0})).to.be.equal('empty');
+        expect(original.at({x: 0, y: 2})).to.be.equal('blue');
+
+        expect(cloned.at({x: 0, y: 0})).to.be.equal('blue');
+        expect(cloned.at({x: 0, y: 2})).to.be.equal('red');
+    });
 });

@@ -69,15 +69,20 @@ var mapPoints = function (cb) {
     return collector;
 };
 
+var jsonClone = function (obj) {
+    return JSON.parse(JSON.stringify(obj));
+};
+
 var Game = module.exports = function (spec) {
     var that = {};
+    spec = spec || {};
 
     /* public fields */
-    that.result = undefined;
-    that.current = 'blue';
+    that.result = spec.result || undefined;
+    that.current = spec.current || 'blue';
 
     /* private fields */
-    var board = _.times(4, function (x) {
+    var board = spec.board || _.times(4, function (x) {
         return _.times(4, function (y) {
             if (y < 2) {
                 return 'blue';
@@ -123,6 +128,14 @@ var Game = module.exports = function (spec) {
         if (countTile(that.current) === 1) {
             that.result = oppsite(that.current);
         }
+    };
+
+    that.clone = function () {
+        return Game({
+            current: that.current,
+            result: that.result,
+            board: jsonClone(board)
+        });
     };
 
     /* private methods */
