@@ -128,6 +128,16 @@ var Game = module.exports = function (spec) {
         if (countTile(that.current) === 1) {
             that.result = oppsite(that.current);
         }
+
+        return that;
+    };
+
+    that.childrenState = function () {
+        return _.map(that.listActions(), action => () => that.nextRound(action));
+    };
+
+    that.nextRound = function (action) {
+        return that.clone().act(action);
     };
 
     that.clone = function () {
@@ -180,4 +190,22 @@ var Game = module.exports = function (spec) {
 
     return that;
 
+};
+
+module.exports.formatDebug = function (game) {
+    let header = ['---- current:', game.current,
+                  'result:', game.result,
+                  'moves: ', game.listActions().length].join(' ');
+    let board = _.times(4, j => {
+        return _.times(4, i => {
+            let tile = game.at({x: i, y: j});
+            return {
+                'empty': '.',
+                'blue': 'B',
+                'red': 'R'
+            }[tile];
+        }).join('');
+    }).join('\n');
+
+    return header + '\n' + board;
 };
