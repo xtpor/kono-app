@@ -1,13 +1,15 @@
 
 /* global -Promise */
-const Promise = require('bluebird');
+const Promise = require('promise');
 const _ = require('lodash');
 const kono = require('./kono');
 
 function defer (func) {
-    return new Promise((resolve, reject) => {
-        _.defer(() => resolve(func()));
-    });
+    return function (...args) {
+        return new Promise((resolve, reject) => {
+            _.defer(() => resolve(func(...args)));
+        });
+    };
 }
 
 function rate (game, player) {
@@ -33,13 +35,14 @@ const minimax = exports.minimax = function (game, player, maxDepth) {
     if (maxDepth === 0 || game.result) {
         return Promise.resolve(rate(game, player));
     } else {
-        return Promise.all(_.map(game.childrenState(), state => defer(() => {
+        let childrenRatings = _.map(game.childrenState(), defer(state => {
             return minimax(state(), player, maxDepth - 1);
-        })))
-        .then(ratings => {
-            let combinator = game.current === player ? _.max : _.min;
-            return combinator(ratings);
-        });
+        }));
+        return Promise.all(childrenRatings)
+            .then(ratings => {
+                let combinator = game.current === player ? _.max : _.min;
+                return combinator(ratings);
+            });
     }
 };
 
