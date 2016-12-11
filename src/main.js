@@ -129,15 +129,7 @@ Crafty.scene('pickSecond', function () {
                         Crafty.scene('gameover');
                     } else {
                         picked = null;
-                        strategy.minimaxOptimal(game, 5)
-                            .then(choice => {
-                                game.act(choice.action);
-                                if (game.result) {
-                                    Crafty.scene('gameover');
-                                } else {
-                                    Crafty.scene('pickFirst');
-                                }
-                            });
+                        Crafty.scene('waiting');
                     }
                 });
         }
@@ -149,6 +141,26 @@ Crafty.scene('pickSecond', function () {
         .bind('MouseUp', function () {
             picked = null;
             Crafty.scene('pickFirst');
+        });
+
+    autoFitWidth();
+});
+
+Crafty.scene('waiting', function () {
+    console.log('waiting');
+
+    var entities = {};
+    renderAll(entities);
+    flashingIcon(entities);
+
+    strategy.minimaxOptimal(game, 5)
+        .then(choice => {
+            game.act(choice.action);
+            if (game.result) {
+                Crafty.scene('gameover');
+            } else {
+                Crafty.scene('pickFirst');
+            }
         });
 
     autoFitWidth();
