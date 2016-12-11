@@ -1,6 +1,7 @@
 
 'use strict';
 var expect = require('chai').expect;
+var assert = require('assert');
 var _ = require('underscore');
 
 
@@ -18,11 +19,14 @@ var pointGuard = function (point) {
     }
 };
 
+var isInt = function (value) {
+    return typeof value === 'number' && ~~value === value;
+};
+
 var validatePoint = function (point) {
-    expect(point).to.be.contain.all.keys('x', 'y');
-    expect(point).to.be.satisfy(function (p) {
-        return ~~point.x === point.x && ~~point.y === point.y && pointGuard(p);
-    });
+    assert(isInt(point.x));
+    assert(isInt(point.y));
+    assert(pointGuard(point));
 };
 
 var up = function (point) {
@@ -108,7 +112,7 @@ var Game = module.exports = function (spec) {
     };
 
     that.act = function (action) {
-        expect(that.listActions()).to.deep.include.members([action]);
+        validateAction(action);
         board[action.to.x][action.to.y] = board[action.from.x][action.from.y];
         board[action.from.x][action.from.y] = 'empty';
         that.current = oppsite(that.current);
@@ -144,6 +148,13 @@ var Game = module.exports = function (spec) {
     };
 
     /* private methods */
+    var validateAction = function (action) {
+        // expect(that.listActions()).to.deep.include.members([action]);
+        return _.some(that.listActions(), a => {
+            return JSON.stringify(a) === JSON.stringify(action);
+        });
+    };
+
     var computeActionsList = function () {
         if (that.result) {
             return [];
@@ -221,3 +232,6 @@ module.exports.formatDebug = function (game) {
 
     return header + '\n' + board;
 };
+
+// exports helper functions
+Game.mapPoints = mapPoints;

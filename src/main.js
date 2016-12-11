@@ -4,6 +4,7 @@
 var _ = require('underscore');
 var Crafty = require('craftyjs');
 var Kono = require('./kono');
+var strategy = require('./strategy');
 
 var res = require('./res');
 var layout = require('./layout');
@@ -128,7 +129,15 @@ Crafty.scene('pickSecond', function () {
                         Crafty.scene('gameover');
                     } else {
                         picked = null;
-                        Crafty.scene('pickFirst');
+                        strategy.minimaxOptimal(game, 5)
+                            .then(choice => {
+                                game.act(choice.action);
+                                if (game.result) {
+                                    Crafty.scene('gameover');
+                                } else {
+                                    Crafty.scene('pickFirst');
+                                }
+                            });
                     }
                 });
         }

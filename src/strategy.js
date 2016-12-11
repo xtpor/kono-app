@@ -1,6 +1,6 @@
 
 /* global -Promise */
-const Promise = require('promise');
+const Promise = require('bluebird');
 const _ = require('lodash');
 const kono = require('./kono');
 
@@ -10,13 +10,9 @@ function defer (func) {
     });
 }
 
-function eachPoint (cb) {
-    return _.flatten(_.times(4, x => _.times(4, y => cb({x, y}))));
-}
-
 function rate (game, player) {
     if (game.result === undefined) {
-        return _.sum(_.map(eachPoint(p => {
+        return _.sum(kono.mapPoints(p => {
             const tile = game.at(p);
             if (tile === 'empty') {
                 return 0;
@@ -25,7 +21,7 @@ function rate (game, player) {
             } else {
                 return -1;
             }
-        })));
+        }));
     } else if (game.result === player) {
         return 8;
     } else {
