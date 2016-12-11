@@ -82,6 +82,8 @@ var Game = module.exports = function (spec) {
     that.current = spec.current || 'blue';
 
     /* private fields */
+    var actionsListCache = null;
+
     var board = spec.board || _.times(4, function (x) {
         return _.times(4, function (y) {
             if (y < 2) {
@@ -99,20 +101,10 @@ var Game = module.exports = function (spec) {
     };
 
     that.listActions = function () {
-        if (that.result) {
-            return [];
-        } else {
-            var nestedActions = _.map([up, down, left, right], function (next) {
-                return mapPoints(function (p) {
-                    return [
-                        testMove(p, next),
-                        testAttackFar(p, next),
-                        testAttackClose(p, next),
-                    ];
-                });
-            });
-            return _.compact(_.flatten(nestedActions));
+        if (!actionsListCache) {
+            actionsListCache = computeActionsList();
         }
+        return actionsListCache;
     };
 
     that.act = function (action) {
@@ -128,6 +120,9 @@ var Game = module.exports = function (spec) {
         if (countTile(that.current) === 1) {
             that.result = oppsite(that.current);
         }
+
+        // invalidate the action list cache
+        actionsListCache = null;
 
         return that;
     };
@@ -149,6 +144,23 @@ var Game = module.exports = function (spec) {
     };
 
     /* private methods */
+    var computeActionsList = function () {
+        if (that.result) {
+            return [];
+        } else {
+            var nestedActions = _.map([up, down, left, right], function (next) {
+                return mapPoints(function (p) {
+                    return [
+                        testMove(p, next),
+                        testAttackFar(p, next),
+                        testAttackClose(p, next),
+                    ];
+                });
+            });
+            return _.compact(_.flatten(nestedActions));
+        }
+    };
+
     var get = function (index) {
         if (index) {
             return that.at(index);
