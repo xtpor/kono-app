@@ -1,7 +1,7 @@
 
 /*jshint browser: true */
 'use strict';
-var _ = require('underscore');
+var _ = require('lodash');
 var Crafty = require('craftyjs');
 var Kono = require('./kono');
 var strategy = require('./strategy');

@@ -1,6 +1,6 @@
 
 'use strict';
-var _ = require('underscore');
+var _ = require('lodash');
 
 
 var rawPosition = {
@@ -32,7 +32,7 @@ var rawPosition = {
 
 var screenHeight = rawPosition.screen[3];
 
-module.exports = _.object(_.map(rawPosition, function (pos, name) {
+module.exports = _.fromPairs(_.map(rawPosition, function (pos, name) {
     return [name, {
         x: pos[0],
         y: screenHeight - pos[1] - pos[3],

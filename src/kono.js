@@ -2,7 +2,7 @@
 'use strict';
 var expect = require('chai').expect;
 var assert = require('assert');
-var _ = require('underscore');
+var _ = require('lodash');
 
 
 var orElse = function (value, f) {
@@ -150,25 +150,24 @@ var Game = module.exports = function (spec) {
     /* private methods */
     var validateAction = function (action) {
         // expect(that.listActions()).to.deep.include.members([action]);
-        return _.some(that.listActions(), a => {
+        assert(_.some(that.listActions(), a => {
             return JSON.stringify(a) === JSON.stringify(action);
-        });
+        }));
     };
 
     var computeActionsList = function () {
         if (that.result) {
             return [];
         } else {
-            var nestedActions = _.map([up, down, left, right], function (next) {
-                return mapPoints(function (p) {
-                    return [
-                        testMove(p, next),
-                        testAttackFar(p, next),
-                        testAttackClose(p, next),
-                    ];
+            var possibleActions = [];
+            var nestedActions = _.map([up, down, left, right], next => {
+                mapPoints(p => {
+                    possibleActions.push(testMove(p, next));
+                    possibleActions.push(testAttackFar(p, next));
+                    possibleActions.push(testAttackClose(p, next));
                 });
             });
-            return _.compact(_.flatten(nestedActions));
+            return _.compact(possibleActions);
         }
     };
 

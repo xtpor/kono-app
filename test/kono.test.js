@@ -14,6 +14,16 @@ var act = function (game, fromX, fromY, toX, toY) {
 };
 
 describe('Kono', function () {
+    it('kono#listActions', function () {
+        var game = Kono();
+        expect(game.listActions()).to.be.eql([
+            {from: {x: 0, y: 0}, to: {x: 0, y: 2}},
+            {from: {x: 1, y: 0}, to: {x: 1, y: 2}},
+            {from: {x: 2, y: 0}, to: {x: 2, y: 2}},
+            {from: {x: 3, y: 0}, to: {x: 3, y: 2}},
+        ]);
+    });
+
     it('simulation #1', function () {
         var game = Kono();
         act(game, 3, 0, 3, 2);
