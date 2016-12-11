@@ -6,6 +6,8 @@
   "dependencies": {
     "chai": "^3.5.0",
     "craftyjs": "^0.7.1",
+    "lodash": "^4.17.2",
+    "promise": "^7.1.1",
     "underscore": "^1.8.3"
   },
   "scripts": {
