@@ -5,63 +5,45 @@ var assert = require('assert');
 var _ = require('lodash');
 
 
-var orElse = function (value, f) {
-    // if value is no undefined, apply the function `f` and return the result.
-    // Otherwise, returns undefined.
-    if (value !== undefined) {
-        return f(value);
-    }
-};
-
-var pointGuard = function (point) {
+function pointGuard (point) {
     if (0 <= point.x && point.x < 4 && 0 <= point.y && point.y < 4) {
         return point;
     }
-};
+}
 
-var isInt = function (value) {
+function isInt (value) {
     return typeof value === 'number' && ~~value === value;
-};
+}
 
-var validatePoint = function (point) {
+function validatePoint (point) {
     assert(isInt(point.x));
     assert(isInt(point.y));
     assert(pointGuard(point));
-};
+}
 
-var up = function (point) {
-    return orElse(point, function (p) {
-        return pointGuard({x: p.x, y: p.y - 1});
-    });
-};
+function up (point) {
+    return point && pointGuard({x: point.x, y: point.y - 1});
+}
 
-var down = function (point) {
-    return orElse(point, function (p) {
-        return pointGuard({x: p.x, y: p.y + 1});
-    });
-};
+function down (point) {
+    return point && pointGuard({x: point.x, y: point.y + 1});
+}
 
-var left = function (point) {
-    return orElse(point, function (p) {
-        return pointGuard({x: p.x - 1, y: p.y});
-    });
-};
+function left (point) {
+    return point && pointGuard({x: point.x - 1, y: point.y});
+}
 
-var right = function (point) {
-    return orElse(point, function (p) {
-        return pointGuard({x: p.x + 1, y: p.y});
-    });
-};
+function right (point) {
+    return point && pointGuard({x: point.x + 1, y: point.y});
+}
 
-var oppsite = function (tile) {
-    if (tile === 'red') {
-        return 'blue';
-    } else if (tile === 'blue') {
-        return 'red';
-    } else {
-        return 'empty';
-    }
-};
+var oppsite;
+{
+    let oppsiteTable = {red: 'blue', blue: 'red', empty: 'empty'};
+    oppsite = function (tile) {
+        return oppsiteTable[tile];
+    };
+}
 
 var mapPoints = function (cb) {
     var collector = [];
