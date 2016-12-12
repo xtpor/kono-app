@@ -59,25 +59,29 @@ var jsonClone = function (obj) {
     return JSON.parse(JSON.stringify(obj));
 };
 
-var Game = module.exports = function (spec) {
-    var that = Object.create(Game.prototype);
-    spec = spec || {};
-
-    /* public fields */
-    that.result = spec.result || undefined;
-    that.current = spec.current || 'blue';
-
-    /* private fields */
-    that._actionsListCache = null;
-
-    that._board = spec.board || _.times(4, function (x) {
+var cloneBoard = function (from) {
+    return _.times(4, function (x) {
         return _.times(4, function (y) {
-            if (y < 2) {
-                return 'blue';
-            } else {
-                return 'red';
-            }
+            return from[x][y];
         });
+    });
+};
+
+var Game = module.exports = function (spec) {
+    var that = _.create(Game.prototype, spec);
+    _.defaults(that, {
+        result: undefined,
+        current: 'blue',
+        _actionsListCache: null,
+        _board: _.times(4, function (x) {
+            return _.times(4, function (y) {
+                if (y < 2) {
+                    return 'blue';
+                } else {
+                    return 'red';
+                }
+            });
+        })
     });
 
     return that;
@@ -131,7 +135,8 @@ Game.prototype.clone = function () {
     return Game({
         current: this.current,
         result: this.result,
-        board: jsonClone(this._board)
+        _board: cloneBoard(this._board),
+        _actionsListCache: this._actionsListCache
     });
 };
 

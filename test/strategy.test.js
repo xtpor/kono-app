@@ -11,7 +11,7 @@ describe('minimax algorithm', function () {
         let game = kono({
             result: undefined,
             current: 'blue',
-            board: [
+            _board: [
                 ['empty', 'blue', 'empty', 'empty'],
                 ['empty', 'blue', 'empty', 'empty'],
                 ['empty', 'empty', 'empty', 'empty'],
@@ -29,7 +29,7 @@ describe('minimax algorithm', function () {
         let game = kono({
             result: undefined,
             current: 'blue',
-            board: [
+            _board: [
                 ['red', 'blue', 'empty', 'blue'],
                 ['red', 'blue', 'empty', 'empty'],
                 ['empty', 'empty', 'empty', 'empty'],
@@ -47,7 +47,7 @@ describe('minimax algorithm', function () {
         let game = kono({
             result: undefined,
             current: 'blue',
-            board: [
+            _board: [
                 ['empty', 'blue', 'empty', 'empty'],
                 ['empty', 'blue', 'empty', 'empty'],
                 ['empty', 'empty', 'empty', 'empty'],
@@ -65,7 +65,7 @@ describe('minimax algorithm', function () {
         let game = kono({
             result: undefined,
             current: 'blue',
-            board: [
+            _board: [
                 ['red', 'blue', 'empty', 'blue'],
                 ['red', 'blue', 'empty', 'empty'],
                 ['empty', 'empty', 'empty', 'empty'],
