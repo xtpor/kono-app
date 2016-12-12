@@ -45,12 +45,30 @@ var oppsite;
 }
 
 var mapPoints = function (cb) {
+    /*
+    Optimization: unrolled-loop
+
+    return _.compact(_.times(4, x => {
+        return _.times(4, y => cb({x, y}));
+    }));
+    */
     var collector = [];
-    _.times(4, function (x) {
-        _.times(4, function (y) {
-            collector.push(cb({x: x, y: y}));
-        });
-    });
+    collector.push(cb({x: 0, y: 0}));
+    collector.push(cb({x: 0, y: 1}));
+    collector.push(cb({x: 0, y: 2}));
+    collector.push(cb({x: 0, y: 3}));
+    collector.push(cb({x: 1, y: 0}));
+    collector.push(cb({x: 1, y: 1}));
+    collector.push(cb({x: 1, y: 2}));
+    collector.push(cb({x: 1, y: 3}));
+    collector.push(cb({x: 2, y: 0}));
+    collector.push(cb({x: 2, y: 1}));
+    collector.push(cb({x: 2, y: 2}));
+    collector.push(cb({x: 2, y: 3}));
+    collector.push(cb({x: 3, y: 0}));
+    collector.push(cb({x: 3, y: 1}));
+    collector.push(cb({x: 3, y: 2}));
+    collector.push(cb({x: 3, y: 3}));
     return collector;
 };
 
