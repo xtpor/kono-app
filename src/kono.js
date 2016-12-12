@@ -131,7 +131,7 @@ Game.prototype.nextRound = function (action) {
 };
 
 Game.prototype.clone = function () {
-    return Game({
+    return _.create(Game.prototype, {
         current: this.current,
         result: this.result,
         _board: cloneBoard(this._board),
