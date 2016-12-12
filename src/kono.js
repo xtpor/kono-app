@@ -1,6 +1,5 @@
 
 'use strict';
-var expect = require('chai').expect;
 var assert = require('assert');
 var _ = require('lodash');
 
@@ -141,7 +140,6 @@ Game.prototype.clone = function () {
 };
 
 Game.prototype._validateAction = function (action) {
-    // expect(that.listActions()).to.deep.include.members([action]);
     assert(_.some(this.listActions(), a => {
         return JSON.stringify(a) === JSON.stringify(action);
     }));
@@ -151,9 +149,11 @@ Game.prototype._computeActionsList = function () {
     var possibleActions = [];
     _.forEach([up, down, left, right], next => {
         mapPoints(p => {
-            possibleActions.push(this._testMove(p, next));
-            possibleActions.push(this._testAttackFar(p, next));
-            possibleActions.push(this._testAttackClose(p, next));
+            if (this.at(p) === this.current) {
+                possibleActions.push(this._testMove(p, next));
+                possibleActions.push(this._testAttackFar(p, next));
+                possibleActions.push(this._testAttackClose(p, next));
+            }
         });
     });
     return _.compact(possibleActions);
@@ -166,29 +166,35 @@ Game.prototype._get = function (index) {
 };
 
 Game.prototype._testMove = function (start, next) {
+    let n1 = next(start);
     var cond = this._get(start) === this.current &&
-               this._get(next(start)) === 'empty';
+               this._get(n1) === 'empty';
     if (cond) {
-        return {from: start, to: next(start)};
+        return {from: start, to: n1};
     }
 };
 
 Game.prototype._testAttackClose = function (start, next) {
+    let n1 = next(start),
+        n2 = next(n1);
     var cond = this._get(start) === this.current &&
-               this._get(next(start)) === this.current &&
-               this._get(next(next(start))) === oppsite(this.current);
+               this._get(n1) === this.current &&
+               this._get(n2) === oppsite(this.current);
     if (cond) {
-        return {from: start, to: next(next(start))};
+        return {from: start, to: n2};
     }
 };
 
 Game.prototype._testAttackFar = function (start, next) {
+    let n1 = next(start),
+        n2 = next(n1),
+        n3 = next(n2);
     var cond = this._get(start) === this.current &&
-               this._get(next(start)) === this.current &&
-               this._get(next(next(start))) === 'empty' &&
-               this._get(next(next(next((start))))) === oppsite(this.current);
+               this._get(n1) === this.current &&
+               this._get(n2) === 'empty' &&
+               this._get(n3) === oppsite(this.current);
     if (cond) {
-        return {from: start, to: next(next(next(start)))};
+        return {from: start, to: n3};
     }
 };
 

@@ -38,7 +38,7 @@ function rate (game, player) {
 
 const alphabeta = exports.alphabeta = function (game, player, depth, a, b) {
     function prunning (type, states, v, a, b) {
-        expect(states.length).to.be.not.equal(0, kono.formatDebug(game));
+        expect(states.length).to.be.not.equal(0/* , kono.formatDebug(game) */);
         let [first, rest] = [_.head(states), _.tail(states)];
         return deferPs()
             .then(() => alphabeta(first(), player, depth - 1, a, b))
