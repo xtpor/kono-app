@@ -60,7 +60,7 @@ var jsonClone = function (obj) {
 };
 
 var Game = module.exports = function (spec) {
-    var that = {};
+    var that = Object.create(Game.prototype);
     spec = spec || {};
 
     /* public fields */
@@ -68,9 +68,9 @@ var Game = module.exports = function (spec) {
     that.current = spec.current || 'blue';
 
     /* private fields */
-    var actionsListCache = null;
+    that._actionsListCache = null;
 
-    var board = spec.board || _.times(4, function (x) {
+    that._board = spec.board || _.times(4, function (x) {
         return _.times(4, function (y) {
             if (y < 2) {
                 return 'blue';
@@ -80,120 +80,119 @@ var Game = module.exports = function (spec) {
         });
     });
 
-    /* public methods */
-    that.at = function (point) {
-        validatePoint(point);
-        return board[point.x][point.y];
-    };
-
-    that.listActions = function () {
-        if (that.result) {
-            return [];
-        }
-        if (!actionsListCache) {
-            actionsListCache = computeActionsList();
-        }
-        return actionsListCache;
-    };
-
-    that.act = function (action) {
-        validateAction(action);
-        board[action.to.x][action.to.y] = board[action.from.x][action.from.y];
-        board[action.from.x][action.from.y] = 'empty';
-        that.current = oppsite(that.current);
-
-        // invalidate the action list cache
-        actionsListCache = computeActionsList();
-
-        if (_.isEmpty(actionsListCache)) {
-            that.result = oppsite(that.current);
-        }
-
-        if (countTile(that.current) === 1) {
-            that.result = oppsite(that.current);
-        }
-
-        return that;
-    };
-
-    that.childrenState = function () {
-        return _.map(that.listActions(), action => () => that.nextRound(action));
-    };
-
-    that.nextRound = function (action) {
-        return that.clone().act(action);
-    };
-
-    that.clone = function () {
-        return Game({
-            current: that.current,
-            result: that.result,
-            board: jsonClone(board)
-        });
-    };
-
-    /* private methods */
-    var validateAction = function (action) {
-        // expect(that.listActions()).to.deep.include.members([action]);
-        assert(_.some(that.listActions(), a => {
-            return JSON.stringify(a) === JSON.stringify(action);
-        }));
-    };
-
-    var computeActionsList = function () {
-        var possibleActions = [];
-        _.forEach([up, down, left, right], next => {
-            mapPoints(p => {
-                possibleActions.push(testMove(p, next));
-                possibleActions.push(testAttackFar(p, next));
-                possibleActions.push(testAttackClose(p, next));
-            });
-        });
-        return _.compact(possibleActions);
-    };
-
-    var get = function (index) {
-        if (index) {
-            return that.at(index);
-        }
-    };
-
-    var testMove = function (start, next) {
-        var cond = get(start) === that.current &&
-                   get(next(start)) === 'empty';
-        if (cond) {
-            return {from: start, to: next(start)};
-        }
-    };
-
-    var testAttackClose = function (start, next) {
-        var cond = get(start) === that.current &&
-                   get(next(start)) === that.current &&
-                   get(next(next(start))) === oppsite(that.current);
-        if (cond) {
-            return {from: start, to: next(next(start))};
-        }
-    };
-
-    var testAttackFar = function (start, next) {
-        var cond = get(start) === that.current &&
-                   get(next(start)) === that.current &&
-                   get(next(next(start))) === 'empty' &&
-                   get(next(next(next((start))))) === oppsite(that.current);
-        if (cond) {
-            return {from: start, to: next(next(next(start)))};
-        }
-    };
-
-    var countTile = function (tile) {
-        return _.filter(mapPoints(get), function (t) {
-            return t === tile;
-        }).length;
-    };
-
     return that;
-
 };
+
+    /* public methods */
+Game.prototype.at = function (point) {
+    validatePoint(point);
+    return this._board[point.x][point.y];
+};
+
+Game.prototype.listActions = function () {
+    if (this.result) {
+        return [];
+    }
+    if (!this._actionsListCache) {
+        this._actionsListCache = this._computeActionsList();
+    }
+    return this._actionsListCache;
+};
+
+Game.prototype.act = function (action) {
+    this._validateAction(action);
+    this._board[action.to.x][action.to.y] = this._board[action.from.x][action.from.y];
+    this._board[action.from.x][action.from.y] = 'empty';
+    this.current = oppsite(this.current);
+
+    // invalidate the action list cache
+    this._actionsListCache = this._computeActionsList();
+
+    if (_.isEmpty(this._actionsListCache)) {
+        this.result = oppsite(this.current);
+    }
+
+    if (this._countTile(this.current) === 1) {
+        this.result = oppsite(this.current);
+    }
+
+    return this;
+};
+
+Game.prototype.childrenState = function () {
+    return _.map(this.listActions(), action => () => this.nextRound(action));
+};
+
+Game.prototype.nextRound = function (action) {
+    return this.clone().act(action);
+};
+
+Game.prototype.clone = function () {
+    return Game({
+        current: this.current,
+        result: this.result,
+        board: jsonClone(this._board)
+    });
+};
+
+Game.prototype._validateAction = function (action) {
+    // expect(that.listActions()).to.deep.include.members([action]);
+    assert(_.some(this.listActions(), a => {
+        return JSON.stringify(a) === JSON.stringify(action);
+    }));
+};
+
+Game.prototype._computeActionsList = function () {
+    var possibleActions = [];
+    _.forEach([up, down, left, right], next => {
+        mapPoints(p => {
+            possibleActions.push(this._testMove(p, next));
+            possibleActions.push(this._testAttackFar(p, next));
+            possibleActions.push(this._testAttackClose(p, next));
+        });
+    });
+    return _.compact(possibleActions);
+};
+
+Game.prototype._get = function (index) {
+    if (index) {
+        return this.at(index);
+    }
+};
+
+Game.prototype._testMove = function (start, next) {
+    var cond = this._get(start) === this.current &&
+               this._get(next(start)) === 'empty';
+    if (cond) {
+        return {from: start, to: next(start)};
+    }
+};
+
+Game.prototype._testAttackClose = function (start, next) {
+    var cond = this._get(start) === this.current &&
+               this._get(next(start)) === this.current &&
+               this._get(next(next(start))) === oppsite(this.current);
+    if (cond) {
+        return {from: start, to: next(next(start))};
+    }
+};
+
+Game.prototype._testAttackFar = function (start, next) {
+    var cond = this._get(start) === this.current &&
+               this._get(next(start)) === this.current &&
+               this._get(next(next(start))) === 'empty' &&
+               this._get(next(next(next((start))))) === oppsite(this.current);
+    if (cond) {
+        return {from: start, to: next(next(next(start)))};
+    }
+};
+
+Game.prototype._countTile = function (tile) {
+    return _.filter(mapPoints(i => this._get(i)), function (t) {
+        return t === tile;
+    }).length;
+};
+
 
 module.exports.formatDebug = function (game) {
     let header = ['---- current:', game.current,
