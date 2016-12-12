@@ -87,6 +87,9 @@ var Game = module.exports = function (spec) {
     };
 
     that.listActions = function () {
+        if (that.result) {
+            return [];
+        }
         if (!actionsListCache) {
             actionsListCache = computeActionsList();
         }
@@ -99,16 +102,16 @@ var Game = module.exports = function (spec) {
         board[action.from.x][action.from.y] = 'empty';
         that.current = oppsite(that.current);
 
-        if (_.isEmpty(that.listActions())) {
+        // invalidate the action list cache
+        actionsListCache = computeActionsList();
+
+        if (_.isEmpty(actionsListCache)) {
             that.result = oppsite(that.current);
         }
 
         if (countTile(that.current) === 1) {
             that.result = oppsite(that.current);
         }
-
-        // invalidate the action list cache
-        actionsListCache = null;
 
         return that;
     };
@@ -138,19 +141,15 @@ var Game = module.exports = function (spec) {
     };
 
     var computeActionsList = function () {
-        if (that.result) {
-            return [];
-        } else {
-            var possibleActions = [];
-            var nestedActions = _.map([up, down, left, right], next => {
-                mapPoints(p => {
-                    possibleActions.push(testMove(p, next));
-                    possibleActions.push(testAttackFar(p, next));
-                    possibleActions.push(testAttackClose(p, next));
-                });
+        var possibleActions = [];
+        _.forEach([up, down, left, right], next => {
+            mapPoints(p => {
+                possibleActions.push(testMove(p, next));
+                possibleActions.push(testAttackFar(p, next));
+                possibleActions.push(testAttackClose(p, next));
             });
-            return _.compact(possibleActions);
-        }
+        });
+        return _.compact(possibleActions);
     };
 
     var get = function (index) {

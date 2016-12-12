@@ -1,6 +1,7 @@
 
 /* global -Promise */
 const assert = require('assert');
+const expect = require('chai').expect;
 const Promise = require('promise');
 const _ = require('lodash');
 const kono = require('./kono');
@@ -37,7 +38,7 @@ function rate (game, player) {
 
 const alphabeta = exports.alphabeta = function (game, player, depth, a, b) {
     function prunning (type, states, v, a, b) {
-        assert(!_.isEmpty(states));
+        expect(states.length).to.be.not.equal(0, kono.formatDebug(game));
         let [first, rest] = [_.head(states), _.tail(states)];
         return deferPs()
             .then(() => alphabeta(first(), player, depth - 1, a, b))
@@ -53,6 +54,7 @@ const alphabeta = exports.alphabeta = function (game, player, depth, a, b) {
                 if (b <= a || _.isEmpty(rest)) {
                     return v;
                 } else {
+                    expect(states.length).to.be.not.equal(0);
                     return prunning(type, rest, v, a, b);
                 }
             });

@@ -155,6 +155,7 @@ Crafty.scene('waiting', function () {
 
     strategy.alphabetaOptimal(game, 7)
         .then(choice => {
+            console.log('choice', JSON.stringify(choice));
             game.act(choice.action);
             if (game.result) {
                 Crafty.scene('gameover');
