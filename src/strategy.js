@@ -1,15 +1,19 @@
 
 /* global -Promise */
+const assert = require('assert');
 const Promise = require('promise');
 const _ = require('lodash');
 const kono = require('./kono');
 
-function defer (func) {
-    return function (...args) {
-        return new Promise((resolve, reject) => {
-            _.defer(() => resolve(func(...args)));
-        });
-    };
+function deferPs () {
+    let p = 0.05;
+    return new Promise((resolve, reject) => {
+        if (Math.random() <= p) {
+            _.defer(() => resolve());
+        } else {
+            resolve(undefined);
+        }
+    });
 }
 
 function rate (game, player) {
@@ -31,13 +35,45 @@ function rate (game, player) {
     }
 }
 
+const alphabeta = exports.alphabeta = function (game, player, depth, a, b) {
+    function prunning (type, states, v, a, b) {
+        assert(!_.isEmpty(states));
+        let [first, rest] = [_.head(states), _.tail(states)];
+        return deferPs()
+            .then(() => alphabeta(first(), player, depth - 1, a, b))
+            .then(rating => {
+                if (type === 'beta') {
+                    v = Math.max(v, rating);
+                    a = Math.max(a, v);
+                } else if (type === 'alpha') {
+                    v = Math.min(v, rating);
+                    b = Math.min(b, v);
+                }
+
+                if (b <= a || _.isEmpty(rest)) {
+                    return v;
+                } else {
+                    return prunning(type, rest, v, a, b);
+                }
+            });
+    }
+
+    if (depth === 0 || game.result) {
+        return Promise.resolve(rate(game, player, depth));
+    } else if (game.current === player) {
+        return prunning('beta', game.childrenState(), -Infinity, a, b);
+    } else {
+        return prunning('alpha', game.childrenState(), Infinity, a, b);
+    }
+};
+
 const minimax = exports.minimax = function (game, player, maxDepth) {
     if (maxDepth === 0 || game.result) {
         return Promise.resolve(rate(game, player));
     } else {
-        let childrenRatings = _.map(game.childrenState(), defer(state => {
-            return minimax(state(), player, maxDepth - 1);
-        }));
+        let childrenRatings = _.map(game.childrenState(), state => {
+            return deferPs().then(() => minimax(state(), player, maxDepth - 1));
+        });
         return Promise.all(childrenRatings)
             .then(ratings => {
                 let combinator = game.current === player ? _.max : _.min;
@@ -51,7 +87,13 @@ exports.minimaxOptimal = function (game, depth) {
         return minimax(game.nextRound(action), game.current, depth - 1)
             .then(rating => ({action, rating}));
     }))
-    .then(pairs => {
-        return _.maxBy(pairs, 'rating');
-    });
+    .then(pairs => _.maxBy(pairs, 'rating'));
+};
+
+exports.alphabetaOptimal = function (game, depth) {
+    return Promise.all(_.map(game.listActions(), action => {
+        return alphabeta(game.nextRound(action), game.current, depth - 1, -Infinity, Infinity)
+            .then(rating => ({action, rating}));
+    }))
+    .then(pairs => _.maxBy(pairs, 'rating'));
 };

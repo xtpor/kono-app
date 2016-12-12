@@ -153,7 +153,7 @@ Crafty.scene('waiting', function () {
     renderAll(entities);
     flashingIcon(entities);
 
-    strategy.minimaxOptimal(game, 5)
+    strategy.alphabetaOptimal(game, 7)
         .then(choice => {
             game.act(choice.action);
             if (game.result) {

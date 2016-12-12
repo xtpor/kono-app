@@ -42,4 +42,40 @@ describe('minimax algorithm', function () {
             expect(strategy.rating).to.be.equal(8);
         });
     });
+
+    it('alphabeta #1', function () {
+        let game = kono({
+            result: undefined,
+            current: 'blue',
+            board: [
+                ['empty', 'blue', 'empty', 'empty'],
+                ['empty', 'blue', 'empty', 'empty'],
+                ['empty', 'empty', 'empty', 'empty'],
+                ['empty', 'red', 'red', 'empty']
+            ]
+        });
+
+        return strategy.alphabetaOptimal(game, 1).then(strategy => {
+            expect(strategy.action).to.be.eql({from: {x: 0, y: 1}, to: {x: 3, y: 1}});
+            expect(strategy.rating).to.be.equal(8);
+        });
+    });
+
+    it('alphabeta #2', function () {
+        let game = kono({
+            result: undefined,
+            current: 'blue',
+            board: [
+                ['red', 'blue', 'empty', 'blue'],
+                ['red', 'blue', 'empty', 'empty'],
+                ['empty', 'empty', 'empty', 'empty'],
+                ['empty', 'empty', 'empty', 'empty']
+            ]
+        });
+
+        return strategy.alphabetaOptimal(game, 3).then(strategy => {
+            expect(strategy.action).to.be.eql({from: {x: 0, y: 3}, to: {x: 0, y: 2}});
+            expect(strategy.rating).to.be.equal(8);
+        });
+    });
 });
