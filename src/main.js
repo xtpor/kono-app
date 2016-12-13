@@ -93,6 +93,23 @@ var flashingIcon = function (entities) {
     }
 };
 
+Crafty.scene('start', function () {
+    console.log('pickFirst');
+
+    var entities = {};
+    renderAll(entities);
+
+    setTimeout(function () {
+        if (window.confirm('Move first?')) {
+            Crafty.scene('pickFirst');
+        } else {
+            Crafty.scene('waiting');
+        }
+    }, 500);
+
+    autoFitWidth();
+});
+
 Crafty.scene('pickFirst', function () {
     console.log('pickFirst');
 
@@ -223,7 +240,7 @@ Crafty.scene('gameover', function () {
         .delay(function () {
             game = Kono();
             picked = null;
-            Crafty.scene('pickFirst');
+            Crafty.scene('start');
         }, 5000);
 
     autoFitWidth();
@@ -232,6 +249,6 @@ Crafty.scene('gameover', function () {
 module.exports = function () {
     Crafty.load(res, function () {
         Crafty.init(2024, 2000, 'stage');
-        Crafty.scene('pickFirst');
+        Crafty.scene('start');
     });
 };
