@@ -1,6 +1,8 @@
 
 /*jshint browser: true */
+/* global -Promise */
 'use strict';
+const Promise = require('promise');
 var _ = require('lodash');
 var Crafty = require('craftyjs');
 var Kono = require('./kono');
@@ -124,13 +126,15 @@ Crafty.scene('pickSecond', function () {
             flashingImage(tileEntity, game.at(action.to) + 'Tile');
             tileEntity.requires('Mouse')
                 .bind('MouseUp', function () {
-                    game.act(action);
-                    if (game.result) {
-                        Crafty.scene('gameover');
-                    } else {
-                        picked = null;
-                        Crafty.scene('waiting');
-                    }
+                    animateTile(entities, action).then(() => {
+                        game.act(action);
+                        if (game.result) {
+                            Crafty.scene('gameover');
+                        } else {
+                            picked = null;
+                            Crafty.scene('waiting');
+                        }
+                    });
                 });
         }
     });
@@ -146,7 +150,7 @@ Crafty.scene('pickSecond', function () {
     autoFitWidth();
 });
 
-Crafty.scene('waiting', function () {
+Crafty.scene('waiting', function (action) {
     console.log('waiting');
 
     var entities = {};
@@ -155,17 +159,43 @@ Crafty.scene('waiting', function () {
 
     robot.alphabetaOptimal(game, 7)
         .then(choice => {
-            console.log('choice', JSON.stringify(choice));
-            game.act(choice.action);
-            if (game.result) {
-                Crafty.scene('gameover');
-            } else {
-                Crafty.scene('pickFirst');
-            }
+            animateTile(entities, choice.action).then(() => {
+                console.log('choice', JSON.stringify(choice));
+                game.act(choice.action);
+                if (game.result) {
+                    Crafty.scene('gameover');
+                } else {
+                    Crafty.scene('pickFirst');
+                }
+            });
         });
 
     autoFitWidth();
 });
+
+function animateTile (entities, action) {
+    const {from: {x: fx, y: fy}, to: {x: tx, y: ty}} = action;
+
+    const tweenType = "easeOutQuad";
+    const srcEntity = entities[`${fx},${fy}`];
+    const dstEntity = entities[`${tx},${ty}`];
+
+    const durationPerUnit = 300;
+    const distance = Math.abs(fx - tx) + Math.abs(fy - ty);
+    const duration = distance * durationPerUnit;
+
+    Crafty.e('2D, DOM, Image')
+        .attr({x: srcEntity.x, y: srcEntity.y})
+        .image(image('emptyTile'));
+
+    srcEntity.requires('Tween')
+        .attr({z: 100})
+        .tween({x: dstEntity.x, y: dstEntity.y}, duration, "smoothStep");
+
+    return new Promise((resolve, reject) => {
+        setTimeout(resolve, duration);
+    });
+}
 
 Crafty.scene('gameover', function () {
     console.log('gameover');
