@@ -4,7 +4,7 @@ const _ = require('lodash');
 const kono = require('../src/kono');
 const strategy = require('../src/strategy');
 
-describe('performance of alpha-beta prunning', function () {
+describe.skip('performance of alpha-beta prunning', function () {
     this.timeout(10000);
 
     it('benchmark #1', function () {

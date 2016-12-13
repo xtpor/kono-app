@@ -4,7 +4,7 @@ const kono = require('../src/kono');
 const strategy = require('../src/strategy');
 
 
-describe('minimax algorithm', function () {
+describe.skip('minimax algorithm', function () {
     this.timeout(7500);
 
     it('know how to win #1', function () {

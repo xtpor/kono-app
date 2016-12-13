@@ -4,7 +4,7 @@
 var _ = require('lodash');
 var Crafty = require('craftyjs');
 var Kono = require('./kono');
-var strategy = require('./strategy');
+var robot = require('./robot');
 
 var res = require('./res');
 var layout = require('./layout');
@@ -153,7 +153,7 @@ Crafty.scene('waiting', function () {
     renderAll(entities);
     flashingIcon(entities);
 
-    strategy.alphabetaOptimal(game, 7)
+    robot.alphabetaOptimal(game, 7)
         .then(choice => {
             console.log('choice', JSON.stringify(choice));
             game.act(choice.action);
