@@ -25,7 +25,13 @@ var config = {
 };
 
 var game = Kono();
+let robotType = robot.easyMode;
 var picked = null;
+
+window.assistant = function () {
+    robot.alphabetaOptimalOptions(game, 7)
+        .then(choices => console.log(require('util').inspect(choices, { depth: null })));
+};
 
 var autoFitWidth = function () {
     var scale = window.innerWidth / config.width;
@@ -100,6 +106,17 @@ Crafty.scene('start', function () {
     renderAll(entities);
 
     setTimeout(function () {
+        let mode = window.prompt('AI Type: Easy(1), Normal(2), Hard(3), Impossible(4)');
+        if (mode === '4') {
+            robotType = robot.impossibleMode;
+        } else if (mode === '3') {
+            robotType = robot.hardMode;
+        } else if (mode === '2') {
+            robotType = robot.normalMode;
+        } else {
+            robotType = robot.easyMode;
+        }
+
         if (window.confirm('Move first?')) {
             Crafty.scene('pickFirst');
         } else {
@@ -174,7 +191,7 @@ Crafty.scene('waiting', function (action) {
     renderAll(entities);
     flashingIcon(entities);
 
-    robot.alphabetaOptimal(game, 7)
+    robot.easyMode(game, 7)
         .then(choice => {
             animateTile(entities, choice.action).then(() => {
                 console.log('choice', JSON.stringify(choice));

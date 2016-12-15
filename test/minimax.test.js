@@ -4,7 +4,7 @@ const kono = require('../src/kono');
 const minimax = require('../src/minimax');
 
 
-describe('synchronize minimax algorithm', function () {
+describe.skip('synchronize minimax algorithm', function () {
     this.timeout(7500);
 
     it('pick a winning move', function () {
