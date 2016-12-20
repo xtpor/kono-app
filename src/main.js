@@ -1,268 +1,200 @@
 
 /*jshint browser: true */
-/* global -Promise */
-'use strict';
-const Promise = require('promise');
-var _ = require('lodash');
-var Crafty = require('craftyjs');
-var Kono = require('./kono');
-var robot = require('./robot');
+const assert = require('assert');
+const Crafty = require('craftyjs');
+const _ = require('lodash');
+const viewport = require('./viewport');
+const layout = require('./layout');
 
-var viewport = require('./viewport');
-var res = require('./res');
-var layout = require('./layout');
 
-window.Crafty = Crafty; // DEBUG
-
-var config = {
-    selfTile: 'red',
-    selfName: 'Player 2',
-    enemyTile: 'blue',
-    enemyName: 'Player 1',
-
-    // designed resolution
-    width: 512,
-    height: 768,
+const config = {
+    designedRes: [720, 1280],
+    difficulty: 'easy',
+    color: 'blue',
+    sound: true,
 };
 
-var game = Kono();
-let robotType = robot.easyMode;
-var picked = null;
+function img (str) {
+    return `assets/images/${str}`;
+}
 
-window.assistant = function () {
-    robot.alphabetaOptimalOptions(game, 7)
-        .then(choices => console.log(require('util').inspect(choices, { depth: null })));
-};
+function shiftDifficulty () {
+    let options = ['easy', 'normal', 'hard', 'impossible'];
+    let next = options[(options.indexOf(config.difficulty) + 1) % options.length];
+    config.difficulty = next;
+    return next;
+}
 
-var autoFitWidth = function () {
-    var scale = window.innerWidth / config.width;
-    console.log('fit with designed resolution, scale =', scale);
-    Crafty.viewport.scale(scale);
-};
+function shiftColor () {
+    config.color = config.color === 'red' ? 'blue' : 'red';
+    return config.color;
+}
 
-var image = function (imageName) {
-    return 'assets/images/' + imageName + '.png';
-};
+function shiftSound () {
+    config.sound = !config.sound;
+    return config.sound;
+}
 
-var flashingImage = function (entity, imageName) {
-    var emphasized = true;
-    entity.requires('Image, Delay')
-        .image(image(imageName + 'Em'))
-        .delay(function () {
-            if (emphasized) {
-                this.image(image(imageName + 'Em'));
-            } else {
-                this.image(image(imageName));
-            }
-            emphasized = !emphasized;
-        }, 400, -1);
-};
+Crafty.c('RotatingGradient', {
+    required: '2D, Canvas',
+    init () {
+        this._rot = 0;
+        this._rotSpeed = Crafty.math.degToRad(60);
+        this._hue = 0;
+        this._hueOffset = 90;
+        this._hueSpeed = 30;
+        this._saturation = 40;
+        this._lightness = 45;
 
-var renderAll = function (memo) {
-    memo.enemyIcon = Crafty.e("2D, DOM, Image")
-        .attr(layout.enemyIcon)
-        .image(image('blueIcon'));
+        /* canvas rendering protocal */
+        this.ready = true;
+        this.bind('Draw', this._render);
+    },
+    _gradient (ctx) {
+        function rotate ([x, y], k) {
+            return [x*Math.cos(k) + y*Math.sin(k), y*Math.cos(k) - x*Math.sin(k)];
+        }
 
-    memo.enemyName = Crafty.e("2D, DOM, Text")
-        .attr(layout.enemyName)
-        .text(config.enemyName)
-        .textFont({size: '50px', family: 'grobedeutschmeister'});
+        let basePoint = [this.x - this.w/2, this.y - this.h/2];
+        let args = [...rotate(basePoint, this._rot),
+                    ...rotate(basePoint, this._rot + Math.PI)];
+        let firstStop = `hsl(${this._hue}, ${this._saturation}%, ${this._lightness}%)`;
+        let finalStop = `hsl(${this._hue + this._hueOffset}, ${this._saturation}%, ${this._lightness}%)`;
 
-    memo.selfIcon = Crafty.e("2D, DOM, Image")
-        .attr(layout.selfIcon)
-        .image(image('redIcon'));
+        let gradient = ctx.createLinearGradient(...args);
+        gradient.addColorStop(0, firstStop);
+        gradient.addColorStop(1, finalStop);
 
-    memo.selfName = Crafty.e("2D, DOM, Text")
-        .attr(layout.selfName)
-        .text(config.selfName)
-        .textFont({size: '50px', family: 'grobedeutschmeister'})
-        .css({'text-align': 'right'});
+        return gradient;
+    },
+    _render ({ctx, pos, co}) {
+        ctx.save();
+        ctx.translate(this.x + this.w/2, this.y + this.h/2);
 
-    memo.board = Crafty.e("2D, DOM, Image")
-        .attr(layout.board)
-        .image(image('board'));
-
-    _.times(4, function (i) {
-        _.times(4, function (j) {
-            var tile = game.at({x: i, y: j});
-            memo[i + ',' + j] = Crafty.e("2D, DOM, Image")
-                .attr(layout['grid:' + i + ',' + j])
-                .image(image(tile + 'Tile'));
-        });
-    });
-};
-
-var flashingIcon = function (entities) {
-    if (config.selfTile === game.current) {
-        flashingImage(entities.selfIcon, config.selfTile + 'Icon');
-    } else {
-        flashingImage(entities.enemyIcon, config.enemyTile + 'Icon');
+        ctx.fillStyle = this._gradient(ctx);
+        ctx.fillRect(this.x - this.w/2, this.y - this.h/2, this.w, this.h);
+        ctx.restore();
+    },
+    events: {
+        EnterFrame ({frame, dt}) {
+            this._rot += (dt / 1000) * this._rotSpeed;
+            this._hue += (dt / 1000) * this._hueSpeed;
+            this.trigger('Invalidate');
+        },
+        Change () {
+            this.trigger('Invalidate');
+        }
     }
-};
-
-Crafty.scene('start', function () {
-    console.log('pickFirst');
-
-    var entities = {};
-    renderAll(entities);
-
-    setTimeout(function () {
-        let mode = window.prompt('AI Type: Easy(1), Normal(2), Hard(3), Impossible(4)');
-        if (mode === '4') {
-            robotType = robot.impossibleMode;
-        } else if (mode === '3') {
-            robotType = robot.hardMode;
-        } else if (mode === '2') {
-            robotType = robot.normalMode;
-        } else {
-            robotType = robot.easyMode;
-        }
-
-        if (window.confirm('Move first?')) {
-            Crafty.scene('pickFirst');
-        } else {
-            Crafty.scene('waiting');
-        }
-    }, 500);
-
 });
 
-Crafty.scene('pickFirst', function () {
-    console.log('pickFirst');
+module.exports = () => {
+    Crafty.init(window.innerWidth, window.innerHeight, 'stage');
+    Crafty.background('black');
 
-    var entities = {};
-    renderAll(entities);
-    flashingIcon(entities);
+    viewport.scaling(config.designedRes);
 
-    _.each(game.listActions(), function (action) {
-        var tileEntity = entities[action.from.x + ',' + action.from.y];
-        flashingImage(tileEntity, game.at(action.from) + 'Tile');
-        tileEntity.requires('Mouse')
-            .bind('MouseUp', function () {
-                picked = action.from;
-                Crafty.scene('pickSecond');
-            });
-    });
+    Crafty.e('2D, Canvas, RotatingGradient, Persist')
+        .attr({x: 0, y: 0, w: config.designedRes[0], h: config.designedRes[1]});
 
-});
 
-Crafty.scene('pickSecond', function () {
-    console.log('pickSecond');
-
-    var entities = {};
-    renderAll(entities);
-    flashingIcon(entities);
-
-    _.each(game.listActions(), function (action) {
-        if (_.isEqual(picked, action.from)) {
-            var tileEntity = entities[action.to.x + ',' + action.to.y];
-            flashingImage(tileEntity, game.at(action.to) + 'Tile');
-            tileEntity.requires('Mouse')
-                .bind('MouseUp', function () {
-                    animateTile(entities, action).then(() => {
-                        game.act(action);
-                        if (game.result) {
-                            Crafty.scene('gameover');
-                        } else {
-                            picked = null;
-                            Crafty.scene('waiting');
-                        }
-                    });
-                });
-        }
-    });
-
-    var pickedEntity = entities[picked.x + ',' + picked.y];
-    pickedEntity.requires('Mouse')
-        .image(image(game.at(picked) + 'TileEm'))
-        .bind('MouseUp', function () {
-            picked = null;
-            Crafty.scene('pickFirst');
-        });
-
-});
-
-Crafty.scene('waiting', function (action) {
-    console.log('waiting');
-
-    var entities = {};
-    renderAll(entities);
-    flashingIcon(entities);
-
-    robot.easyMode(game, 7)
-        .then(choice => {
-            animateTile(entities, choice.action).then(() => {
-                console.log('choice', JSON.stringify(choice));
-                game.act(choice.action);
-                if (game.result) {
-                    Crafty.scene('gameover');
+    Crafty.scene('game', function () {
+        _.times(4, i => {
+            _.times(4, j => {
+                if (j < 3) {
+                    Crafty.e('2D, DOM, Image')
+                        .attr(layout.tile(i, j))
+                        .image('assets/images/tile/empty.png');
                 } else {
-                    Crafty.scene('pickFirst');
+                    Crafty.e('2D, DOM, Image')
+                        .attr(layout.tile(i, j))
+                        .image('assets/images/tile/empty.png');
                 }
             });
         });
 
-});
+        _.times(3, i => {
+            _.times(4, j => {
+                Crafty.e('2D, DOM, Image')
+                    .attr(layout.horiz(i, j))
+                    .image('assets/images/horizontal/empty-empty.png');
+            });
+        });
 
-function animateTile (entities, action) {
-    const {from: {x: fx, y: fy}, to: {x: tx, y: ty}} = action;
-
-    const tweenType = "easeOutQuad";
-    const srcEntity = entities[`${fx},${fy}`];
-    const dstEntity = entities[`${tx},${ty}`];
-
-    const durationPerUnit = 300;
-    const distance = Math.abs(fx - tx) + Math.abs(fy - ty);
-    const duration = distance * durationPerUnit;
-
-    Crafty.e('2D, DOM, Image')
-        .attr({x: srcEntity.x, y: srcEntity.y})
-        .image(image('emptyTile'));
-
-    srcEntity.requires('Tween')
-        .attr({z: 100})
-        .tween({x: dstEntity.x, y: dstEntity.y}, duration, "smoothStep");
-
-    return new Promise((resolve, reject) => {
-        setTimeout(resolve, duration);
+        _.times(4, i => {
+            _.times(3, j => {
+                Crafty.e('2D, DOM, Image')
+                    .attr(layout.verti(i, j))
+                    .image('assets/images/vertical/empty-empty.png');
+            });
+        });
     });
-}
 
-Crafty.scene('gameover', function () {
-    console.log('gameover');
+    Crafty.scene('menu', function () {
+        function message (str) {
+            const duration = 1500;
+            Crafty.e('2D, DOM, Text, Tween, Delay')
+                .attr({x: 0, y: 900, w: 720, h: 60})
+                .css('text-align', 'center')
+                .textColor('white')
+                .text(str)
+                .textFont({size: '50px', family: 'HankenLight'})
+                .tween({alpha: 0.0}, duration, "easeOutQuad")
+                .delay(function () {
+                    this.destroy();
+                }, duration);
+        }
 
-    var entities = {};
-    renderAll(entities);
+        Crafty.e('2D, DOM, Text')
+            .attr({x: 0, y: 290, w: config.designedRes[0], h: 60})
+            .css('text-align', 'center')
+            .textColor('white')
+            .text('KONO')
+            .textFont({size: '125px', family: 'HankenLight'});
 
-    Crafty.e("2D, DOM, Image")
-        .attr(layout.panel)
-        .image('assets/images/panel.png');
+        Crafty.e('2D, DOM, Image, Mouse')
+            .attr(layout.playButton)
+            .image(img('icon/play.png'))
+            .bind('MouseUp', function () {
+                Crafty.scene('game');
+            });
 
-    var message;
+        Crafty.e('2D, DOM, Image, Mouse')
+            .attr(layout.difficultyButton)
+            .image(img(`icon/difficulty/${config.difficulty}.png`))
+            .bind('MouseUp', function () {
+                shiftDifficulty();
+                message(`${config.difficulty} difficulty`);
+                this.image(img(`icon/difficulty/${config.difficulty}.png`));
+            });
 
-    if (config.selfTile === game.result) {
-        message = config.selfName + ' wins';
-    } else {
-        message = config.enemyName + ' wins';
-    }
+        Crafty.e('2D, DOM, Image, Mouse')
+            .attr(layout.colorButton)
+            .image(img(`icon/color/${config.color}.png`))
+            .bind('MouseUp', function () {
+                shiftColor();
+                message(`picked ${config.color}`);
+                this.image(img(`icon/color/${config.color}.png`));
+            });
 
-    Crafty.e("2D, DOM, Text, Delay")
-        .attr(layout.panelText)
-        .text(message)
-        .textFont({size: '50px', family: 'grobedeutschmeister'})
-        .css({'text-align': 'center'})
-        .delay(function () {
-            game = Kono();
-            picked = null;
-            Crafty.scene('start');
-        }, 5000);
+        Crafty.e('2D, DOM, Image, Mouse')
+            .attr(layout.soundButton)
+            .image(img(`icon/sound/${config.sound}.png`))
+            .bind('MouseUp', function () {
+                shiftSound();
+                message(`${config.sound ? 'enable' : 'disable'} sound`);
+                this.image(img(`icon/sound/${config.sound}.png`));
+            });
 
-});
+        Crafty.e('2D, DOM, Image, Mouse')
+            .attr(layout.tutorialButton)
+            .image(img(`icon/tutorial.png`))
+            .bind('MouseUp', function () {
+                message('tutorial (unimplemented)');
+            });
 
-module.exports = function () {
-    Crafty.load(res, function () {
-        Crafty.init(2024, 2000, 'stage');
-        viewport.scaling([512, 768]);
-        Crafty.scene('start');
     });
+
+    Crafty.scene('menu');
+    window.Crafty = Crafty;
+
 };
