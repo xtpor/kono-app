@@ -8,6 +8,7 @@ var Crafty = require('craftyjs');
 var Kono = require('./kono');
 var robot = require('./robot');
 
+var viewport = require('./viewport');
 var res = require('./res');
 var layout = require('./layout');
 
@@ -124,7 +125,6 @@ Crafty.scene('start', function () {
         }
     }, 500);
 
-    autoFitWidth();
 });
 
 Crafty.scene('pickFirst', function () {
@@ -144,7 +144,6 @@ Crafty.scene('pickFirst', function () {
             });
     });
 
-    autoFitWidth();
 });
 
 Crafty.scene('pickSecond', function () {
@@ -181,7 +180,6 @@ Crafty.scene('pickSecond', function () {
             Crafty.scene('pickFirst');
         });
 
-    autoFitWidth();
 });
 
 Crafty.scene('waiting', function (action) {
@@ -204,7 +202,6 @@ Crafty.scene('waiting', function (action) {
             });
         });
 
-    autoFitWidth();
 });
 
 function animateTile (entities, action) {
@@ -260,12 +257,12 @@ Crafty.scene('gameover', function () {
             Crafty.scene('start');
         }, 5000);
 
-    autoFitWidth();
 });
 
 module.exports = function () {
     Crafty.load(res, function () {
         Crafty.init(2024, 2000, 'stage');
+        viewport.scaling([512, 768]);
         Crafty.scene('start');
     });
 };
