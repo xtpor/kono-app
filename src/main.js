@@ -145,25 +145,29 @@ function main () {
     }
 
     function displayMessage (str, attr, duration=2000) {
-        Crafty.e('2D, DOM, Text, Tween, Delay, Message')
+        let ent = Crafty.e('2D, DOM, Text, Tween, Delay, Message')
             .attr({x: 0, y: 900, w: 720, h: 60})
             .attr(attr)
             .css('text-align', 'center')
             .textColor('white')
             .text(str)
-            .textFont({size: '50px', family: 'HankenLight'})
+            .textFont({size: '50px', family: 'HankenLight'});
+
+        if (duration > 0) {
+            ent
             .tween({alpha: 0.0}, duration, "easeOutQuad")
             .delay(function () {
                 this.destroy();
             }, duration);
+        }
     }
 
     function gameStatus (str) {
-        displayMessage(str, {y: 200}, 10000);
+        displayMessage(str, {y: 200}, 0);
     }
 
     function gameInfo (str) {
-        displayMessage(str, {y: 1000}, 60000);
+        displayMessage(str, {y: 1050}, 0);
     }
 
     function moveTile (game, tiles, action, completeCb) {
@@ -338,7 +342,11 @@ function main () {
             .attr(layout.playButton)
             .image(img('icon/play.png'))
             .bind('MouseUp', function () {
-                Crafty.scene('pickFirstTile', {game: kono()});
+                if (config.color === 'blue') {
+                    Crafty.scene('pickFirstTile', {game: kono()});
+                } else {
+                    Crafty.scene('robotAction', {game: kono()});
+                }
             });
 
         Crafty.e('2D, DOM, Image, Mouse')
