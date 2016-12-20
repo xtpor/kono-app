@@ -40,9 +40,9 @@ exports.scaling = function (designedRes) {
         scaleWithDesignedRes(designedRes, true);
     });
     Crafty.bind('SceneChange', () => {
-        scaleWithDesignedRes(designedRes, true);
+        scaleWithDesignedRes(designedRes);
     });
     Crafty.canvasLayer.init();
-    scaleWithDesignedRes(designedRes);
+    scaleWithDesignedRes(designedRes, true);
     _.defer(() => Crafty.trigger('InvalidateViewport'));
 };

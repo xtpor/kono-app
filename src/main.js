@@ -3,12 +3,18 @@
 const assert = require('assert');
 const Crafty = require('craftyjs');
 const _ = require('lodash');
+
+const kono = require('./kono');
+const robot = require('./robot');
+const res = require('./res');
 const viewport = require('./viewport');
 const layout = require('./layout');
 
 
 const config = {
     designedRes: [720, 1280],
+    searchDepth: 7,
+
     difficulty: 'easy',
     color: 'blue',
     sound: true,
@@ -87,7 +93,7 @@ Crafty.c('RotatingGradient', {
     }
 });
 
-module.exports = () => {
+function main () {
     Crafty.init(window.innerWidth, window.innerHeight, 'stage');
     Crafty.background('black');
 
@@ -96,52 +102,229 @@ module.exports = () => {
     Crafty.e('2D, Canvas, RotatingGradient, Persist')
         .attr({x: 0, y: 0, w: config.designedRes[0], h: config.designedRes[1]});
 
+    function renderTiles (game, tileTypeFn) {
+        const blankingDuration = 500; // ms
+        let tiles = {};
 
-    Crafty.scene('game', function () {
-        _.times(4, i => {
-            _.times(4, j => {
-                if (j < 3) {
-                    Crafty.e('2D, DOM, Image')
-                        .attr(layout.tile(i, j))
-                        .image('assets/images/tile/empty.png');
-                } else {
-                    Crafty.e('2D, DOM, Image')
-                        .attr(layout.tile(i, j))
-                        .image('assets/images/tile/empty.png');
-                }
-            });
+        kono.mapPoints(point => {
+            let tile = game.at(point);
+            let entity = Crafty.e('2D, DOM, Image, Mouse, Delay, Tile')
+                .attr(layout.tile(point.x, point.y))
+                .attr({point: point})
+                .image(img(`tile/${tile}.png`));
+            tiles[`${point.x},${point.y}`] = entity;
+
+            let type = tileTypeFn(point, entity);
+
+            if (type === 'emphasized') {
+                entity.requires('Emphasized')
+                    .image(img(`tile/${tile}Em.png`));
+            } else if (type === 'flashing') {
+                let state = true;
+                entity.requires('Flashing')
+                    .delay(function () {
+                        state = !state;
+                        if (state) {
+                            entity.image(img(`tile/${tile}.png`));
+                        } else {
+                            entity.image(img(`tile/${tile}Em.png`));
+                        }
+                    }, blankingDuration, -1);
+            } else {
+                entity.requires('Normal');
+            }
         });
 
-        _.times(3, i => {
-            _.times(4, j => {
-                Crafty.e('2D, DOM, Image')
-                    .attr(layout.horiz(i, j))
-                    .image('assets/images/horizontal/empty-empty.png');
-            });
+        return tiles;
+    }
+
+    function clearMessages () {
+        Crafty('Message').each(function () {
+            this.destroy();
         });
+    }
+
+    function displayMessage (str, attr, duration=2000) {
+        Crafty.e('2D, DOM, Text, Tween, Delay, Message')
+            .attr({x: 0, y: 900, w: 720, h: 60})
+            .attr(attr)
+            .css('text-align', 'center')
+            .textColor('white')
+            .text(str)
+            .textFont({size: '50px', family: 'HankenLight'})
+            .tween({alpha: 0.0}, duration, "easeOutQuad")
+            .delay(function () {
+                this.destroy();
+            }, duration);
+    }
+
+    function gameStatus (str) {
+        displayMessage(str, {y: 200}, 10000);
+    }
+
+    function gameInfo (str) {
+        displayMessage(str, {y: 1000}, 60000);
+    }
+
+    function moveTile (game, tiles, action, completeCb) {
+        let duration = 750;
+        let {from: {x: fx, y: fy}, to: {x: tx, y: ty}} = action;
+        let target = layout.tile(tx, ty);
+
+        Crafty('Tile').each(function () {
+            this.unbind('MouseUp');
+        });
+
+        tiles[`${fx},${fy}`].image(img('tile/empty.png'));
+        Crafty.e('2D, DOM, Image, Tween')
+            .attr(layout.tile(fx, fy))
+            .image(img(`tile/${game.at(action.from)}Em.png`))
+            .tween({x: target.x, y: target.y}, duration, 'smoothStep');
+        setTimeout(completeCb, duration);
+    }
+
+    function renderBars (game) {
+        let bars = {horizontal: {}, vertical: {}};
 
         _.times(4, i => {
             _.times(3, j => {
-                Crafty.e('2D, DOM, Image')
+                let up = game.at({x: i, y: j});
+                let down = game.at({x: i, y: j+1});
+
+                bars.vertical[`${i},${j}`] = Crafty.e('2D, DOM, Image, Bar')
                     .attr(layout.verti(i, j))
-                    .image('assets/images/vertical/empty-empty.png');
+                    .image(img(`vertical/${up}-${down}.png`));
+            });
+        });
+        _.times(3, i => {
+            _.times(4, j => {
+                let left = game.at({x: i, y: j});
+                let right = game.at({x: i+1, y: j});
+
+                bars.horizontal[`${i},${j}`] = Crafty.e('2D, DOM, Image, Bar')
+                    .attr(layout.horiz(i, j))
+                    .image(img(`horizontal/${left}-${right}.png`));
+            });
+        });
+
+        return bars;
+    }
+
+    Crafty.scene('pickFirstTile', function ({game, lastMoved}) {
+        let actions = game.listActions();
+        function fromPoint (point) {
+            return _.some(actions, ({from, to}) => {
+                return _.isEqual(from, point);
+            });
+        }
+
+        gameStatus('YOUR TURN');
+
+        renderTiles(game, (point, entity) => {
+            if (_.isEqual(point, lastMoved)) {
+                return 'emphasized';
+            } else if (fromPoint(point)) {
+                entity.bind('MouseUp', function () {
+                    Crafty.scene('pickSecondTile', {game, lastMoved, selected: point});
+                });
+                return 'flashing';
+            } else {
+                return 'normal';
+            }
+        });
+        renderBars(game);
+    });
+
+    Crafty.scene('pickSecondTile', function ({game, lastMoved, selected}) {
+        let actions = game.listActions();
+        function toPoint (point) {
+            return _.some(actions, ({from, to}) => {
+                return _.isEqual(from, selected) && _.isEqual(to, point);
+            });
+        }
+
+        gameStatus('YOUR TURN');
+
+        let tiles = renderTiles(game, (point, entity) => {
+            if (toPoint(point)) {
+                entity.bind('MouseUp', function () {
+                    moveTile(game, tiles, {from: selected, to: point}, () => {
+                        game.act({from: selected, to: point});
+                        if (game.result) {
+                            Crafty.scene('gameover', {game, lastMoved: point});
+                        } else {
+                            Crafty.scene('robotAction', {game, lastMoved: point});
+                        }
+                    });
+                });
+                return 'flashing';
+            } else {
+                entity.bind('MouseUp', function () {
+                    Crafty.scene('pickFirstTile', {game, lastMoved});
+                });
+                if (_.isEqual(point, selected) || _.isEqual(point, lastMoved)) {
+                    return 'emphasized';
+                } else {
+                    return 'selected';
+                }
+            }
+        });
+        renderBars(game);
+    });
+
+    Crafty.scene('robotAction', function ({game, lastMoved}) {
+        let optimalFn = robot[`${config.difficulty}Mode`];
+        let tiles = renderTiles(game, (point) => {
+            if (_.isEqual(point, lastMoved)) {
+                return 'emphasized';
+            } else {
+                return 'normal';
+            }
+        });
+        renderBars(game);
+
+        gameStatus("COMPUTER' TURN");
+
+        optimalFn(game, config.searchDepth).then(choice => {
+            let lastMoved = choice.action.to;
+            moveTile(game, tiles, choice.action, () => {
+                game.act(choice.action);
+                if (game.result) {
+                    Crafty.scene('gameover', {game, lastMoved});
+                } else {
+                    Crafty.scene('pickFirstTile', {game, lastMoved});
+                }
             });
         });
     });
 
+    Crafty.scene('gameover', function ({game, lastMoved}) {
+        renderBars(game);
+        renderTiles(game, (point, entity) => {
+            if (_.isEqual(point, lastMoved)) {
+                return 'emphasized';
+            } else {
+                return 'normal';
+            }
+        });
+
+        if (game.result === config.color) {
+            gameStatus('YOU WIN');
+        } else {
+            gameStatus('YOU LOSE');
+        }
+        gameInfo('TAP TO RESTART');
+
+        Crafty.e('2D, Mouse')
+            .attr({x: 0, y: 0, w: 720, h: 1280})
+            .bind('MouseUp', function () {
+                Crafty.scene('menu');
+            });
+    });
+
     Crafty.scene('menu', function () {
         function message (str) {
-            const duration = 1500;
-            Crafty.e('2D, DOM, Text, Tween, Delay')
-                .attr({x: 0, y: 900, w: 720, h: 60})
-                .css('text-align', 'center')
-                .textColor('white')
-                .text(str)
-                .textFont({size: '50px', family: 'HankenLight'})
-                .tween({alpha: 0.0}, duration, "easeOutQuad")
-                .delay(function () {
-                    this.destroy();
-                }, duration);
+            displayMessage(str, {y: 900});
         }
 
         Crafty.e('2D, DOM, Text')
@@ -155,7 +338,7 @@ module.exports = () => {
             .attr(layout.playButton)
             .image(img('icon/play.png'))
             .bind('MouseUp', function () {
-                Crafty.scene('game');
+                Crafty.scene('pickFirstTile', {game: kono()});
             });
 
         Crafty.e('2D, DOM, Image, Mouse')
@@ -163,6 +346,7 @@ module.exports = () => {
             .image(img(`icon/difficulty/${config.difficulty}.png`))
             .bind('MouseUp', function () {
                 shiftDifficulty();
+                clearMessages();
                 message(`${config.difficulty} difficulty`);
                 this.image(img(`icon/difficulty/${config.difficulty}.png`));
             });
@@ -172,6 +356,7 @@ module.exports = () => {
             .image(img(`icon/color/${config.color}.png`))
             .bind('MouseUp', function () {
                 shiftColor();
+                clearMessages();
                 message(`picked ${config.color}`);
                 this.image(img(`icon/color/${config.color}.png`));
             });
@@ -181,6 +366,7 @@ module.exports = () => {
             .image(img(`icon/sound/${config.sound}.png`))
             .bind('MouseUp', function () {
                 shiftSound();
+                clearMessages();
                 message(`${config.sound ? 'enable' : 'disable'} sound`);
                 this.image(img(`icon/sound/${config.sound}.png`));
             });
@@ -189,6 +375,7 @@ module.exports = () => {
             .attr(layout.tutorialButton)
             .image(img(`icon/tutorial.png`))
             .bind('MouseUp', function () {
+                clearMessages();
                 message('tutorial (unimplemented)');
             });
 
@@ -196,5 +383,8 @@ module.exports = () => {
 
     Crafty.scene('menu');
     window.Crafty = Crafty;
+}
 
+module.exports = () => {
+    Crafty.load(res, main);
 };
