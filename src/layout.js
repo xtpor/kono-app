@@ -7,11 +7,13 @@ exports.tile = function (x, y) {
 };
 
 exports.horiz = function (x, y) {
-    return {x: 153 + 180*x, y: 364 + 180*y, w: 52, h: 11};
+    let {x: tx, y: ty} = exports.tile(x, y);
+    return {x: 107 + tx, y: 38 + ty, w: 52, h: 11};
 };
 
 exports.verti = function (x, y) {
-    return {x: 84 + 180*x, y: 434 + 180*y, w: 11, h: 52};
+    let {x: tx, y: ty} = exports.tile(x, y);
+    return {x: 38 + tx, y: 107 + ty, w: 11, h: 52};
 };
 
 exports.playButton = {x: 250, y: 580, w: 220, h: 220};
