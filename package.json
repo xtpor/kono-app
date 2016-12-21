@@ -11,6 +11,8 @@
     "webworkify": "^1.4.0"
   },
   "scripts": {
+    "clean": "rm -rf node_modules platforms plugins",
+    "prepare": "sh scripts/prepare.sh",
     "dev": "watchify -t babelify index.js -o www/bundle.js",
     "build": "npm test && browserify index.js --debug -t babelify --outfile www/bundle.js",
     "android": "sh scripts/android-debug.sh",
