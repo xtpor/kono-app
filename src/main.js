@@ -4,6 +4,7 @@ const assert = require('assert');
 const Crafty = require('craftyjs');
 const _ = require('lodash');
 
+require('./androidev');
 const kono = require('./kono');
 const robot = require('./robot');
 const res = require('./res');
@@ -170,6 +171,22 @@ function main () {
         displayMessage(str, {y: 1050}, 0);
     }
 
+    function backButtonExit () {
+        Crafty.e('2D, MobileBackButton, Delay')
+            .bind('BackButton', function () {
+                if (this.pressed) {
+                    Crafty.scene('menu');
+                } else {
+                    const promptDuration = 1500;
+                    this.pressed = true;
+                    displayMessage('press again to exit', {y: 1050}, promptDuration);
+                    this.delay(function () {
+                        this.pressed = false;
+                    }, promptDuration);
+                }
+            });
+    }
+
     function moveTile (game, tiles, action, completeCb) {
         let duration = 750;
         let {from: {x: fx, y: fy}, to: {x: tx, y: ty}} = action;
@@ -238,6 +255,7 @@ function main () {
             }
         });
         renderBars(game);
+        backButtonExit();
     });
 
     Crafty.scene('pickSecondTile', function ({game, lastMoved, selected}) {
@@ -278,6 +296,7 @@ function main () {
             }
         });
         renderBars(game);
+        backButtonExit();
     });
 
     Crafty.scene('robotAction', function ({game, lastMoved}) {
