@@ -1,5 +1,13 @@
 
 module.exports = {
+    "audio": {
+        "win": "assets/audio/win.ogg",
+        "lose": "assets/audio/lose.ogg",
+        "play": "assets/audio/play.ogg",
+        "option": "assets/audio/option.ogg",
+        "select": "assets/audio/select.ogg",
+        "action": "assets/audio/action.ogg",
+    },
     images: [
         "assets/images/horizontal/blue-blue.png",
         "assets/images/horizontal/blue-red.png",

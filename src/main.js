@@ -229,6 +229,7 @@ function main () {
                 return 'emphasized';
             } else if (fromPoint(point)) {
                 entity.bind('MouseUp', function () {
+                    Crafty.audio.play('select');
                     Crafty.scene('pickSecondTile', {game, lastMoved, selected: point});
                 });
                 return 'flashing';
@@ -252,7 +253,9 @@ function main () {
         let tiles = renderTiles(game, (point, entity) => {
             if (toPoint(point)) {
                 entity.bind('MouseUp', function () {
+                    Crafty.audio.play('select');
                     moveTile(game, tiles, {from: selected, to: point}, () => {
+                        Crafty.audio.play('action');
                         game.act({from: selected, to: point});
                         if (game.result) {
                             Crafty.scene('gameover', {game, lastMoved: point});
@@ -264,6 +267,7 @@ function main () {
                 return 'flashing';
             } else {
                 entity.bind('MouseUp', function () {
+                    Crafty.audio.play('select');
                     Crafty.scene('pickFirstTile', {game, lastMoved});
                 });
                 if (_.isEqual(point, selected) || _.isEqual(point, lastMoved)) {
@@ -292,6 +296,7 @@ function main () {
         optimalFn(game, config.searchDepth).then(choice => {
             let lastMoved = choice.action.to;
             moveTile(game, tiles, choice.action, () => {
+                Crafty.audio.play('action');
                 game.act(choice.action);
                 if (game.result) {
                     Crafty.scene('gameover', {game, lastMoved});
@@ -313,8 +318,10 @@ function main () {
         });
 
         if (game.result === config.color) {
+            Crafty.audio.play('win');
             gameStatus('YOU WIN');
         } else {
+            Crafty.audio.play('lose');
             gameStatus('YOU LOSE');
         }
         gameInfo('TAP TO RESTART');
@@ -342,6 +349,7 @@ function main () {
             .attr(layout.playButton)
             .image(img('icon/play.png'))
             .bind('MouseUp', function () {
+                Crafty.audio.play('play');
                 if (config.color === 'blue') {
                     Crafty.scene('pickFirstTile', {game: kono()});
                 } else {
@@ -357,6 +365,7 @@ function main () {
                 clearMessages();
                 message(`${config.difficulty} difficulty`);
                 this.image(img(`icon/difficulty/${config.difficulty}.png`));
+                Crafty.audio.play('option');
             });
 
         Crafty.e('2D, DOM, Image, Mouse')
@@ -367,6 +376,7 @@ function main () {
                 clearMessages();
                 message(`picked ${config.color}`);
                 this.image(img(`icon/color/${config.color}.png`));
+                Crafty.audio.play('option');
             });
 
         Crafty.e('2D, DOM, Image, Mouse')
@@ -377,6 +387,8 @@ function main () {
                 clearMessages();
                 message(`${config.sound ? 'enable' : 'disable'} sound`);
                 this.image(img(`icon/sound/${config.sound}.png`));
+                Crafty.audio.toggleMute();
+                Crafty.audio.play('option');
             });
 
         Crafty.e('2D, DOM, Image, Mouse')
@@ -385,6 +397,7 @@ function main () {
             .bind('MouseUp', function () {
                 clearMessages();
                 message('tutorial (unimplemented)');
+                Crafty.audio.play('option');
             });
 
     });
