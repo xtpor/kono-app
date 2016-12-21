@@ -11,6 +11,7 @@
     "webworkify": "^1.4.0"
   },
   "scripts": {
+    "uglify": "uglifyjs www/bundle.js -o www/bundle.js",
     "clean": "rm -rf node_modules platforms plugins",
     "prepare": "sh scripts/prepare.sh",
     "dev": "watchify -t babelify index.js -o www/bundle.js",
@@ -24,6 +25,7 @@
     "browserify": "^13.1.1",
     "cordova-icon": "^0.9.1",
     "mocha": "^3.2.0",
+    "uglify-js": "^2.7.5",
     "watchify": "^3.7.0"
   },
   "main": "index.js",
