@@ -233,20 +233,21 @@ function main () {
         return bars;
     }
 
+    function fromPoint (actions, point) {
+        return _.some(actions, ({from, to}) => {
+            return _.isEqual(from, point);
+        });
+    }
+
     Crafty.scene('pickFirstTile', function ({game, lastMoved}) {
         let actions = game.listActions();
-        function fromPoint (point) {
-            return _.some(actions, ({from, to}) => {
-                return _.isEqual(from, point);
-            });
-        }
 
         gameStatus('YOUR TURN');
 
         renderTiles(game, (point, entity) => {
             if (_.isEqual(point, lastMoved)) {
                 return 'emphasized';
-            } else if (fromPoint(point)) {
+            } else if (fromPoint(actions, point)) {
                 entity.bind('MouseUp', function () {
                     Crafty.audio.play('select');
                     Crafty.scene('pickSecondTile', {game, lastMoved, selected: point});
@@ -286,10 +287,18 @@ function main () {
                 });
                 return 'flashing';
             } else {
-                entity.bind('MouseUp', function () {
-                    Crafty.audio.play('select');
-                    Crafty.scene('pickFirstTile', {game, lastMoved});
-                });
+                if (fromPoint(actions, point)) {
+                    entity.bind('MouseUp', function () {
+                        Crafty.audio.play('select');
+                        Crafty.scene('pickSecondTile', {game, lastMoved, selected: point});
+                    });
+                } else {
+                    entity.bind('MouseUp', function () {
+                        Crafty.audio.play('select');
+                        Crafty.scene('pickFirstTile', {game, lastMoved});
+                    });
+                }
+
                 if (_.isEqual(point, selected) || _.isEqual(point, lastMoved)) {
                     return 'emphasized';
                 } else {
