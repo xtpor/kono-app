@@ -189,6 +189,7 @@ function main () {
 
     function moveTile (game, tiles, action, completeCb) {
         let duration = 750;
+        let delta = 50;
         let {from: {x: fx, y: fy}, to: {x: tx, y: ty}} = action;
         let target = layout.tile(tx, ty);
 
@@ -201,7 +202,8 @@ function main () {
             .attr(layout.tile(fx, fy))
             .image(img(`tile/${game.at(action.from)}Em.png`))
             .tween({x: target.x, y: target.y}, duration, 'smoothStep');
-        setTimeout(completeCb, duration);
+        // ensure the animation is completed
+        setTimeout(completeCb, duration + delta);
     }
 
     function renderBars (game) {
