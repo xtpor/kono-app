@@ -46,10 +46,10 @@ Crafty.c('RotatingGradient', {
     required: '2D, Canvas',
     init () {
         this._rot = 0;
-        this._rotSpeed = Crafty.math.degToRad(60);
+        this._rotSpeed = Crafty.math.degToRad(10);
         this._hue = 0;
         this._hueOffset = 90;
-        this._hueSpeed = 30;
+        this._hueSpeed = 15;
         this._saturation = 40;
         this._lightness = 45;
 
@@ -104,7 +104,7 @@ function main () {
         .attr({x: 0, y: 0, w: config.designedRes[0], h: config.designedRes[1]});
 
     function renderTiles (game, tileTypeFn) {
-        const blankingDuration = 500; // ms
+        const blankingDuration = 750; // ms
         let tiles = {};
 
         kono.mapPoints(point => {
