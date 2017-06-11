@@ -3,6 +3,8 @@
 
 Kono is a traditional Korea board game. Its rules can be found [here](https://en.wikipedia.org/wiki/Four_Field_Kono).
 
+![Screenshot](https://raw.githubusercontent.com/xtpor/kono-app/master/screenshots/1.png)
+
 ## Build
 
 ### prerequisite
