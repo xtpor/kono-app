@@ -16,7 +16,8 @@
     "prepare": "sh scripts/prepare.sh",
     "dev": "watchify -t babelify index.js -o www/bundle.js",
     "build": "npm test && browserify index.js --debug -t babelify --outfile www/bundle.js",
-    "android": "sh scripts/android-debug.sh",
+    "run-android": "sh scripts/android-debug.sh run",
+    "build-android": "sh scripts/android-debug.sh build",
     "test": "jshint src *.js && mocha --reporter min"
   },
   "devDependencies": {
